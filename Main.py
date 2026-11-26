@@ -1,153 +1,173 @@
-
 import tkinter as tk
 from tkinter import ttk
 
-# Create the application window
+# BookMatch color palette
+backgroundColor = "#CAD2C5"
+buttonColor = "#84A98C"
+secondaryColor = "#52796F"
+headingColor = "#354F52"
+textColor = "#2F3E46"
+
+# Create the main window
 window = tk.Tk()
 window.title("BookMatch")
 window.geometry("900x600")
-window.configure(bg="#F5F0E8")
+window.configure(bg=backgroundColor)
 
-# Create the title
-title_label = tk.Label(
+# Main title
+titleLabel = tk.Label(
     window,
     text="BookMatch",
-    font=("Georgia", 28, "bold"),
-    bg="#F5F0E8",
-    fg="#4A3528"
+    font=("Arial", 28, "bold"),
+    bg=backgroundColor,
+    fg=headingColor
 )
-title_label.pack(pady=(20, 5))
+titleLabel.pack(pady=15)
 
-welcome_label = tk.Label(
+# Welcome message
+welcomeLabel = tk.Label(
     window,
-    text="Find your next favorite book",
+    text="Find your next favorite book!",
+    font=("Arial", 14),
+    bg=backgroundColor,
+    fg=textColor
+)
+welcomeLabel.pack(pady=5)
+
+# Search section
+searchFrame = tk.Frame(window, bg=backgroundColor)
+searchFrame.pack(pady=15)
+
+searchEntry = tk.Entry(
+    searchFrame,
+    width=40,
     font=("Arial", 12),
-    bg="#F5F0E8",
-    fg="#6B5B4D"
+    bg="white",
+    fg=textColor
 )
-welcome_label.pack(pady=(0, 15))
+searchEntry.pack(side=tk.LEFT, padx=5)
 
-# Create the search section
-search_frame = tk.Frame(window, bg="#F5F0E8")
-search_frame.pack(pady=10)
-
-search_label = tk.Label(
-    search_frame,
-    text="Search:",
-    font=("Arial", 12),
-    bg="#F5F0E8"
-)
-search_label.pack(side="left", padx=5)
-
-search_entry = tk.Entry(
-    search_frame,
-    width=35,
-    font=("Arial", 12)
-)
-search_entry.pack(side="left", padx=5)
-
-search_button = tk.Button(
-    search_frame,
+searchButton = tk.Button(
+    searchFrame,
     text="Search",
     font=("Arial", 11),
-    bg="#D8C3A5"
+    bg=buttonColor,
+    fg=textColor,
+    activebackground=secondaryColor,
+    activeforeground="white"
 )
-search_button.pack(side="left", padx=5)
+searchButton.pack(side=tk.LEFT, padx=5)
 
-# Create the main content area
-content_frame = tk.Frame(window, bg="#F5F0E8")
-content_frame.pack(fill="both", expand=True, padx=25, pady=15)
+# Main content area
+contentFrame = tk.Frame(window, bg=backgroundColor)
+contentFrame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
-# Create the book library section
-library_frame = tk.LabelFrame(
-    content_frame,
+# Library section
+libraryFrame = tk.LabelFrame(
+    contentFrame,
     text="My Library",
     font=("Arial", 14, "bold"),
-    bg="#F5F0E8",
-    fg="#4A3528",
+    bg=backgroundColor,
+    fg=headingColor,
     padx=10,
     pady=10
 )
-library_frame.pack(side="left", fill="both", expand=True, padx=10)
+libraryFrame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10)
 
-# Create category buttons
-category_frame = tk.Frame(library_frame, bg="#F5F0E8")
-category_frame.pack(fill="x", pady=5)
-
-read_button = tk.Button(
-    category_frame,
+# Reading category buttons
+readButton = tk.Button(
+    libraryFrame,
     text="Read",
-    bg="#D8C3A5"
+    width=15,
+    bg=buttonColor,
+    fg=textColor,
+    activebackground=secondaryColor,
+    activeforeground="white"
 )
-read_button.pack(side="left", padx=5)
+readButton.pack(pady=5)
 
-reading_button = tk.Button(
-    category_frame,
+currentlyReadingButton = tk.Button(
+    libraryFrame,
     text="Currently Reading",
-    bg="#D8C3A5"
+    width=15,
+    bg=secondaryColor,
+    fg="white",
+    activebackground=headingColor,
+    activeforeground="white"
 )
-reading_button.pack(side="left", padx=5)
+currentlyReadingButton.pack(pady=5)
 
-want_button = tk.Button(
-    category_frame,
+wantToReadButton = tk.Button(
+    libraryFrame,
     text="Want to Read",
-    bg="#D8C3A5"
+    width=15,
+    bg=headingColor,
+    fg="white",
+    activebackground=textColor,
+    activeforeground="white"
 )
-want_button.pack(side="left", padx=5)
+wantToReadButton.pack(pady=5)
 
-# Create a sample book list
-book_list = tk.Listbox(
-    library_frame,
+# Sample book list
+bookList = tk.Listbox(
+    libraryFrame,
     font=("Arial", 12),
-    height=15,
-    width=35
+    bg="white",
+    fg=textColor,
+    selectbackground=secondaryColor,
+    selectforeground="white"
 )
-book_list.pack(fill="both", expand=True, pady=10)
+bookList.pack(fill=tk.BOTH, expand=True, pady=10)
 
-book_list.insert("end", "The Hunger Games - Suzanne Collins")
-book_list.insert("end", "The Hobbit - J.R.R. Tolkien")
-book_list.insert("end", "Pride and Prejudice - Jane Austen")
+bookList.insert(tk.END, "The Hunger Games")
+bookList.insert(tk.END, "The Book Thief")
+bookList.insert(tk.END, "Pride and Prejudice")
 
-# Create the book details section
-details_frame = tk.LabelFrame(
-    content_frame,
+# Book details section
+detailsFrame = tk.LabelFrame(
+    contentFrame,
     text="Book Details",
     font=("Arial", 14, "bold"),
-    bg="#F5F0E8",
-    fg="#4A3528",
-    padx=15,
-    pady=15
+    bg=backgroundColor,
+    fg=headingColor,
+    padx=10,
+    pady=10
 )
-details_frame.pack(side="right", fill="both", expand=True, padx=10)
+detailsFrame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10)
 
-details_label = tk.Label(
-    details_frame,
+detailsLabel = tk.Label(
+    detailsFrame,
     text="Select a book to see its details.",
     font=("Arial", 12),
-    bg="#F5F0E8",
+    bg=backgroundColor,
+    fg=textColor,
     wraplength=250
 )
-details_label.pack(pady=20)
+detailsLabel.pack(pady=20)
 
-# Create the add book button
-add_button = tk.Button(
-    details_frame,
+# Add book button
+addBookButton = tk.Button(
+    detailsFrame,
     text="Add Book",
     font=("Arial", 12),
-    bg="#A3B18A",
-    width=15
+    bg=buttonColor,
+    fg=textColor,
+    activebackground=secondaryColor,
+    activeforeground="white"
 )
-add_button.pack(pady=10)
+addBookButton.pack(pady=10)
 
-# Create the rating button
-rating_button = tk.Button(
-    details_frame,
+# Rate book button
+rateBookButton = tk.Button(
+    detailsFrame,
     text="Rate Book",
     font=("Arial", 12),
-    bg="#D8C3A5",
-    width=15
+    bg=secondaryColor,
+    fg="white",
+    activebackground=headingColor,
+    activeforeground="white"
 )
-rating_button.pack(pady=10)
+rateBookButton.pack(pady=10)
 
-# Keep the application window open
+# Start the application
 window.mainloop()
