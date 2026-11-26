@@ -1,5 +1,4 @@
 import tkinter as tk
-from tkinter import ttk
 
 # BookMatch color palette
 backgroundColor = "#CAD2C5"
@@ -43,7 +42,8 @@ searchEntry = tk.Entry(
     width=40,
     font=("Arial", 12),
     bg="white",
-    fg=textColor
+    fg=textColor,
+    insertbackground=textColor
 )
 searchEntry.pack(side=tk.LEFT, padx=5)
 
@@ -54,7 +54,7 @@ searchButton = tk.Button(
     bg=buttonColor,
     fg=textColor,
     activebackground=secondaryColor,
-    activeforeground="white"
+    activeforeground=textColor
 )
 searchButton.pack(side=tk.LEFT, padx=5)
 
@@ -82,7 +82,7 @@ readButton = tk.Button(
     bg=buttonColor,
     fg=textColor,
     activebackground=secondaryColor,
-    activeforeground="white"
+    activeforeground=textColor
 )
 readButton.pack(pady=5)
 
@@ -91,9 +91,9 @@ currentlyReadingButton = tk.Button(
     text="Currently Reading",
     width=15,
     bg=secondaryColor,
-    fg="white",
-    activebackground=headingColor,
-    activeforeground="white"
+    fg=textColor,
+    activebackground=buttonColor,
+    activeforeground=textColor
 )
 currentlyReadingButton.pack(pady=5)
 
@@ -102,9 +102,9 @@ wantToReadButton = tk.Button(
     text="Want to Read",
     width=15,
     bg=headingColor,
-    fg="white",
-    activebackground=textColor,
-    activeforeground="white"
+    fg=textColor,
+    activebackground=secondaryColor,
+    activeforeground=textColor
 )
 wantToReadButton.pack(pady=5)
 
@@ -114,8 +114,8 @@ bookList = tk.Listbox(
     font=("Arial", 12),
     bg="white",
     fg=textColor,
-    selectbackground=secondaryColor,
-    selectforeground="white"
+    selectbackground=buttonColor,
+    selectforeground=textColor
 )
 bookList.pack(fill=tk.BOTH, expand=True, pady=10)
 
@@ -153,7 +153,7 @@ addBookButton = tk.Button(
     bg=buttonColor,
     fg=textColor,
     activebackground=secondaryColor,
-    activeforeground="white"
+    activeforeground=textColor
 )
 addBookButton.pack(pady=10)
 
@@ -163,9 +163,9 @@ rateBookButton = tk.Button(
     text="Rate Book",
     font=("Arial", 12),
     bg=secondaryColor,
-    fg="white",
-    activebackground=headingColor,
-    activeforeground="white"
+    fg=textColor,
+    activebackground=buttonColor,
+    activeforeground=textColor
 )
 rateBookButton.pack(pady=10)
 
