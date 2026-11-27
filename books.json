@@ -5,5 +5,12 @@
         "genre": "Adventure",
         "status": "Want to Read",
         "rating": 4
+    },
+    {
+        "title": "The Naturals",
+        "author": "Jennifer Lynn Barnes",
+        "genre": "True Crime",
+        "status": "Read",
+        "rating": 5
     }
 ]
