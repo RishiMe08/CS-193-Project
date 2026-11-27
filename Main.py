@@ -1,3 +1,4 @@
+
 import tkinter as tk
 
 from library import open_library
@@ -15,6 +16,7 @@ TEXT_COLOR = "#2F3E46"
 
 
 def create_button(parent, text, command):
+    """Create a button for the home window."""
     button = tk.Button(
         parent,
         text=text,
@@ -26,7 +28,8 @@ def create_button(parent, text, command):
         activeforeground=TEXT_COLOR,
         width=25,
         height=2,
-        relief="flat"
+        relief="flat",
+        cursor="hand2"
     )
     button.pack(pady=7)
 
@@ -35,6 +38,7 @@ root = tk.Tk()
 root.title("BookMatch")
 root.geometry("600x650")
 root.configure(bg=BG_COLOR)
+root.resizable(False, False)
 
 title = tk.Label(
     root,

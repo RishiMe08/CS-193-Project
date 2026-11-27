@@ -1,3 +1,4 @@
+
 import tkinter as tk
 from tkinter import messagebox
 
@@ -13,7 +14,7 @@ TEXT_COLOR = "#2F3E46"
 def open_rate_book(parent):
     window = tk.Toplevel(parent)
     window.title("Rate Book")
-    window.geometry("450x400")
+    window.geometry("450x450")
     window.configure(bg=BG_COLOR)
 
     tk.Label(
@@ -37,36 +38,31 @@ def open_rate_book(parent):
 
         return window
 
-    book_names = [
-        f"{book['title']} by {book['author']}"
-        for book in books
-    ]
+    book_list = tk.Listbox(
+        window,
+        width=40,
+        height=12,
+        font=("Arial", 12),
+        bg="white",
+        fg=TEXT_COLOR
+    )
+    book_list.pack(pady=10)
 
-    selected_book = tk.StringVar(value=book_names[0])
+    for book in books:
+        book_list.insert(
+            tk.END,
+            f"{book['title']} - {book['author']}"
+        )
 
     tk.Label(
         window,
-        text="Select a Book",
+        text="Choose a rating from 1 to 5",
         font=("Arial", 12),
         bg=BG_COLOR,
         fg=TEXT_COLOR
-    ).pack()
-
-    tk.OptionMenu(
-        window,
-        selected_book,
-        *book_names
-    ).pack(pady=10)
+    ).pack(pady=5)
 
     rating = tk.IntVar(value=5)
-
-    tk.Label(
-        window,
-        text="Rating (1-5)",
-        font=("Arial", 12),
-        bg=BG_COLOR,
-        fg=TEXT_COLOR
-    ).pack()
 
     tk.Scale(
         window,
@@ -75,19 +71,30 @@ def open_rate_book(parent):
         orient="horizontal",
         variable=rating,
         bg=BG_COLOR,
-        fg=TEXT_COLOR
-    ).pack(pady=10)
+        fg=TEXT_COLOR,
+        activebackground=BUTTON_COLOR
+    ).pack()
 
     def save_rating():
-        index = book_names.index(selected_book.get())
+        selection = book_list.curselection()
 
+        if not selection:
+            messagebox.showwarning(
+                "Select a Book",
+                "Please select a book to rate.",
+                parent=window
+            )
+            return
+
+        index = selection[0]
         books[index]["rating"] = rating.get()
 
         save_books(books)
 
         messagebox.showinfo(
             "Rating Saved",
-            "Your rating has been saved."
+            "Your rating was saved!",
+            parent=window
         )
 
         window.destroy()
@@ -100,6 +107,6 @@ def open_rate_book(parent):
         bg=BUTTON_COLOR,
         fg=TEXT_COLOR,
         width=20
-    ).pack(pady=20)
+    ).pack(pady=15)
 
     return window

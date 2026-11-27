@@ -1,3 +1,4 @@
+
 import tkinter as tk
 from tkinter import messagebox
 
@@ -13,22 +14,20 @@ TEXT_COLOR = "#2F3E46"
 def open_add_book(parent):
     window = tk.Toplevel(parent)
     window.title("Add Book")
-    window.geometry("450x500")
+    window.geometry("450x550")
     window.configure(bg=BG_COLOR)
 
-    title = tk.Label(
+    tk.Label(
         window,
         text="Add a Book",
         font=("Arial", 24, "bold"),
         bg=BG_COLOR,
         fg=HEADING_COLOR
-    )
-    title.pack(pady=20)
+    ).pack(pady=20)
 
     tk.Label(
         window,
         text="Book Title",
-        font=("Arial", 12),
         bg=BG_COLOR,
         fg=TEXT_COLOR
     ).pack()
@@ -39,7 +38,6 @@ def open_add_book(parent):
     tk.Label(
         window,
         text="Author",
-        font=("Arial", 12),
         bg=BG_COLOR,
         fg=TEXT_COLOR
     ).pack()
@@ -50,7 +48,6 @@ def open_add_book(parent):
     tk.Label(
         window,
         text="Genre",
-        font=("Arial", 12),
         bg=BG_COLOR,
         fg=TEXT_COLOR
     ).pack()
@@ -61,23 +58,21 @@ def open_add_book(parent):
     tk.Label(
         window,
         text="Reading Status",
-        font=("Arial", 12),
         bg=BG_COLOR,
         fg=TEXT_COLOR
     ).pack()
 
     status = tk.StringVar(value="Want to Read")
 
-    status_menu = tk.OptionMenu(
+    tk.OptionMenu(
         window,
         status,
         "Read",
         "Currently Reading",
         "Want to Read"
-    )
-    status_menu.pack(pady=5)
+    ).pack(pady=5)
 
-    def save_book():
+    def save_new_book():
         book_title = title_entry.get().strip()
         author = author_entry.get().strip()
         genre = genre_entry.get().strip()
@@ -85,7 +80,8 @@ def open_add_book(parent):
         if not book_title or not author:
             messagebox.showwarning(
                 "Missing Information",
-                "Please enter the book title and author."
+                "Please enter the title and author.",
+                parent=window
             )
             return
 
@@ -101,20 +97,20 @@ def open_add_book(parent):
 
         messagebox.showinfo(
             "Book Added",
-            "Your book was saved to your library."
+            "Your book was saved!",
+            parent=window
         )
 
         window.destroy()
 
-    save_button = tk.Button(
+    tk.Button(
         window,
         text="Save Book",
-        command=save_book,
+        command=save_new_book,
         font=("Arial", 12),
         bg=BUTTON_COLOR,
         fg=TEXT_COLOR,
         width=20
-    )
-    save_button.pack(pady=20)
+    ).pack(pady=25)
 
     return window
