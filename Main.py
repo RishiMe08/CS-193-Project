@@ -1,4 +1,6 @@
 import tkinter as tk
+import json
+from pathlib import Path
 
 # BookMatch color palette
 backgroundColor = "#CAD2C5"
@@ -6,6 +8,59 @@ buttonColor = "#84A98C"
 secondaryColor = "#52796F"
 headingColor = "#354F52"
 textColor = "#2F3E46"
+
+# File where books will be saved
+booksFile = Path(__file__).parent / "books.json"
+
+# Sample books for the first time the app runs
+defaultBooks = [
+    {
+        "title": "The Hunger Games",
+        "author": "Suzanne Collins",
+        "status": "Want to Read",
+        "rating": 0
+    },
+    {
+        "title": "The Book Thief",
+        "author": "Markus Zusak",
+        "status": "Read",
+        "rating": 5
+    },
+    {
+        "title": "Pride and Prejudice",
+        "author": "Jane Austen",
+        "status": "Currently Reading",
+        "rating": 0
+    }
+]
+
+
+# Save books to the JSON file
+def saveBooks():
+    with open(booksFile, "w") as file:
+        json.dump(books, file, indent=4)
+
+
+# Load books from the JSON file
+def loadBooks():
+    if booksFile.exists():
+        try:
+            with open(booksFile, "r") as file:
+                return json.load(file)
+        except (json.JSONDecodeError, OSError):
+            return defaultBooks.copy()
+
+    return defaultBooks.copy()
+
+
+# Load saved books
+books = loadBooks()
+
+# Create the JSON file if it does not exist
+if not booksFile.exists():
+    with open(booksFile, "w") as file:
+        json.dump(books, file, indent=4)
+
 
 # Create the main window
 window = tk.Tk()
@@ -108,7 +163,7 @@ wantToReadButton = tk.Button(
 )
 wantToReadButton.pack(pady=5)
 
-# Sample book list
+# Book list
 bookList = tk.Listbox(
     libraryFrame,
     font=("Arial", 12),
@@ -119,9 +174,9 @@ bookList = tk.Listbox(
 )
 bookList.pack(fill=tk.BOTH, expand=True, pady=10)
 
-bookList.insert(tk.END, "The Hunger Games")
-bookList.insert(tk.END, "The Book Thief")
-bookList.insert(tk.END, "Pride and Prejudice")
+# Display saved books
+for book in books:
+    bookList.insert(tk.END, book["title"])
 
 # Book details section
 detailsFrame = tk.LabelFrame(
@@ -168,6 +223,19 @@ rateBookButton = tk.Button(
     activeforeground=textColor
 )
 rateBookButton.pack(pady=10)
+
+# Save library button
+saveButton = tk.Button(
+    detailsFrame,
+    text="Save Library",
+    font=("Arial", 12),
+    bg=buttonColor,
+    fg=textColor,
+    activebackground=secondaryColor,
+    activeforeground=textColor,
+    command=saveBooks
+)
+saveButton.pack(pady=10)
 
 # Start the application
 window.mainloop()
