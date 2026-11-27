@@ -1,241 +1,102 @@
 import tkinter as tk
-import json
-from pathlib import Path
 
-# BookMatch color palette
-backgroundColor = "#CAD2C5"
-buttonColor = "#84A98C"
-secondaryColor = "#52796F"
-headingColor = "#354F52"
-textColor = "#2F3E46"
-
-# File where books will be saved
-booksFile = Path(__file__).parent / "books.json"
-
-# Sample books for the first time the app runs
-defaultBooks = [
-    {
-        "title": "The Hunger Games",
-        "author": "Suzanne Collins",
-        "status": "Want to Read",
-        "rating": 0
-    },
-    {
-        "title": "The Book Thief",
-        "author": "Markus Zusak",
-        "status": "Read",
-        "rating": 5
-    },
-    {
-        "title": "Pride and Prejudice",
-        "author": "Jane Austen",
-        "status": "Currently Reading",
-        "rating": 0
-    }
-]
+from library import open_library
+from add_book import open_add_book
+from rate_book import open_rate_book
+from search_books import open_search_books
+from recommendations import open_recommendations
+from find_books import open_find_books
 
 
-# Save books to the JSON file
-def saveBooks():
-    with open(booksFile, "w") as file:
-        json.dump(books, file, indent=4)
+BG_COLOR = "#CAD2C5"
+BUTTON_COLOR = "#84A98C"
+HEADING_COLOR = "#354F52"
+TEXT_COLOR = "#2F3E46"
 
 
-# Load books from the JSON file
-def loadBooks():
-    if booksFile.exists():
-        try:
-            with open(booksFile, "r") as file:
-                return json.load(file)
-        except (json.JSONDecodeError, OSError):
-            return defaultBooks.copy()
-
-    return defaultBooks.copy()
-
-
-# Load saved books
-books = loadBooks()
-
-# Create the JSON file if it does not exist
-if not booksFile.exists():
-    with open(booksFile, "w") as file:
-        json.dump(books, file, indent=4)
+def create_button(parent, text, command):
+    button = tk.Button(
+        parent,
+        text=text,
+        command=command,
+        font=("Arial", 13),
+        bg=BUTTON_COLOR,
+        fg=TEXT_COLOR,
+        activebackground=BUTTON_COLOR,
+        activeforeground=TEXT_COLOR,
+        width=25,
+        height=2,
+        relief="flat"
+    )
+    button.pack(pady=7)
 
 
-# Create the main window
-window = tk.Tk()
-window.title("BookMatch")
-window.geometry("900x600")
-window.configure(bg=backgroundColor)
+root = tk.Tk()
+root.title("BookMatch")
+root.geometry("600x650")
+root.configure(bg=BG_COLOR)
 
-# Main title
-titleLabel = tk.Label(
-    window,
+title = tk.Label(
+    root,
     text="BookMatch",
-    font=("Arial", 28, "bold"),
-    bg=backgroundColor,
-    fg=headingColor
+    font=("Arial", 32, "bold"),
+    bg=BG_COLOR,
+    fg=HEADING_COLOR
 )
-titleLabel.pack(pady=15)
+title.pack(pady=(35, 5))
 
-# Welcome message
-welcomeLabel = tk.Label(
-    window,
-    text="Find your next favorite book!",
-    font=("Arial", 14),
-    bg=backgroundColor,
-    fg=textColor
+subtitle = tk.Label(
+    root,
+    text="Find your next favorite book",
+    font=("Arial", 15),
+    bg=BG_COLOR,
+    fg=TEXT_COLOR
 )
-welcomeLabel.pack(pady=5)
+subtitle.pack(pady=(0, 25))
 
-# Search section
-searchFrame = tk.Frame(window, bg=backgroundColor)
-searchFrame.pack(pady=15)
-
-searchEntry = tk.Entry(
-    searchFrame,
-    width=40,
-    font=("Arial", 12),
-    bg="white",
-    fg=textColor,
-    insertbackground=textColor
+create_button(
+    root,
+    "View Library",
+    lambda: open_library(root)
 )
-searchEntry.pack(side=tk.LEFT, padx=5)
 
-searchButton = tk.Button(
-    searchFrame,
-    text="Search",
+create_button(
+    root,
+    "Add Book",
+    lambda: open_add_book(root)
+)
+
+create_button(
+    root,
+    "Rate Book",
+    lambda: open_rate_book(root)
+)
+
+create_button(
+    root,
+    "Search Books",
+    lambda: open_search_books(root)
+)
+
+create_button(
+    root,
+    "Get Recommendations",
+    lambda: open_recommendations(root)
+)
+
+create_button(
+    root,
+    "Find New Books",
+    lambda: open_find_books(root)
+)
+
+footer = tk.Label(
+    root,
+    text="Your personal reading companion",
     font=("Arial", 11),
-    bg=buttonColor,
-    fg=textColor,
-    activebackground=secondaryColor,
-    activeforeground=textColor
+    bg=BG_COLOR,
+    fg=TEXT_COLOR
 )
-searchButton.pack(side=tk.LEFT, padx=5)
+footer.pack(side="bottom", pady=20)
 
-# Main content area
-contentFrame = tk.Frame(window, bg=backgroundColor)
-contentFrame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
-
-# Library section
-libraryFrame = tk.LabelFrame(
-    contentFrame,
-    text="My Library",
-    font=("Arial", 14, "bold"),
-    bg=backgroundColor,
-    fg=headingColor,
-    padx=10,
-    pady=10
-)
-libraryFrame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10)
-
-# Reading category buttons
-readButton = tk.Button(
-    libraryFrame,
-    text="Read",
-    width=15,
-    bg=buttonColor,
-    fg=textColor,
-    activebackground=secondaryColor,
-    activeforeground=textColor
-)
-readButton.pack(pady=5)
-
-currentlyReadingButton = tk.Button(
-    libraryFrame,
-    text="Currently Reading",
-    width=15,
-    bg=secondaryColor,
-    fg=textColor,
-    activebackground=buttonColor,
-    activeforeground=textColor
-)
-currentlyReadingButton.pack(pady=5)
-
-wantToReadButton = tk.Button(
-    libraryFrame,
-    text="Want to Read",
-    width=15,
-    bg=headingColor,
-    fg=textColor,
-    activebackground=secondaryColor,
-    activeforeground=textColor
-)
-wantToReadButton.pack(pady=5)
-
-# Book list
-bookList = tk.Listbox(
-    libraryFrame,
-    font=("Arial", 12),
-    bg="white",
-    fg=textColor,
-    selectbackground=buttonColor,
-    selectforeground=textColor
-)
-bookList.pack(fill=tk.BOTH, expand=True, pady=10)
-
-# Display saved books
-for book in books:
-    bookList.insert(tk.END, book["title"])
-
-# Book details section
-detailsFrame = tk.LabelFrame(
-    contentFrame,
-    text="Book Details",
-    font=("Arial", 14, "bold"),
-    bg=backgroundColor,
-    fg=headingColor,
-    padx=10,
-    pady=10
-)
-detailsFrame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10)
-
-detailsLabel = tk.Label(
-    detailsFrame,
-    text="Select a book to see its details.",
-    font=("Arial", 12),
-    bg=backgroundColor,
-    fg=textColor,
-    wraplength=250
-)
-detailsLabel.pack(pady=20)
-
-# Add book button
-addBookButton = tk.Button(
-    detailsFrame,
-    text="Add Book",
-    font=("Arial", 12),
-    bg=buttonColor,
-    fg=textColor,
-    activebackground=secondaryColor,
-    activeforeground=textColor
-)
-addBookButton.pack(pady=10)
-
-# Rate book button
-rateBookButton = tk.Button(
-    detailsFrame,
-    text="Rate Book",
-    font=("Arial", 12),
-    bg=secondaryColor,
-    fg=textColor,
-    activebackground=buttonColor,
-    activeforeground=textColor
-)
-rateBookButton.pack(pady=10)
-
-# Save library button
-saveButton = tk.Button(
-    detailsFrame,
-    text="Save Library",
-    font=("Arial", 12),
-    bg=buttonColor,
-    fg=textColor,
-    activebackground=secondaryColor,
-    activeforeground=textColor,
-    command=saveBooks
-)
-saveButton.pack(pady=10)
-
-# Start the application
-window.mainloop()
+root.mainloop()
