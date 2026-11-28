@@ -2,7 +2,8 @@
 import tkinter as tk
 from tkinter import messagebox
 import json
-from pathlib import Path
+
+from user_data import get_preferences_file
 
 
 BG_COLOR = "#CAD2C5"
@@ -10,71 +11,45 @@ BUTTON_COLOR = "#84A98C"
 HEADING_COLOR = "#354F52"
 TEXT_COLOR = "#2F3E46"
 
-PREFERENCES_FILE = Path(__file__).parent / "preferences.json"
-
 
 QUESTIONS = [
     {
         "question": "1. What genres do you enjoy?",
         "options": [
-            "Fantasy",
-            "Mystery",
-            "Romance",
-            "Science Fiction",
-            "Thriller",
-            "Historical Fiction",
-            "Horror",
-            "Adventure",
-            "Nonfiction",
-            "Biography"
+            "Fantasy", "Mystery", "Romance", "Science Fiction",
+            "Thriller", "Historical Fiction", "Horror",
+            "Adventure", "Nonfiction", "Biography"
         ]
     },
     {
         "question": "2. What themes interest you?",
         "options": [
-            "Friendship",
-            "Adventure",
-            "Personal Growth",
-            "Family",
-            "Science and Technology",
-            "History",
-            "Humor",
-            "Love",
-            "Survival",
-            "Problem Solving"
+            "Friendship", "Adventure", "Personal Growth", "Family",
+            "Science and Technology", "History", "Humor", "Love",
+            "Survival", "Problem Solving"
         ]
     },
     {
         "question": "3. What reading style do you prefer?",
         "options": [
-            "Fast-paced",
-            "Slow-paced",
-            "Lots of action",
-            "Detailed descriptions",
-            "Plot twists",
-            "Character-focused",
-            "Thought-provoking"
+            "Fast-paced", "Slow-paced", "Lots of action",
+            "Detailed descriptions", "Plot twists",
+            "Character-focused", "Thought-provoking"
         ]
     },
     {
         "question": "4. What book length do you prefer?",
         "options": [
-            "Short books",
-            "Medium-length books",
-            "Long books",
-            "Any length"
+            "Short books", "Medium-length books",
+            "Long books", "Any length"
         ]
     },
     {
         "question": "5. What kinds of stories interest you?",
         "options": [
-            "Realistic stories",
-            "Imaginary worlds",
-            "True stories",
-            "Dystopian worlds",
-            "Coming-of-age stories",
-            "Detective stories",
-            "Inspirational stories",
+            "Realistic stories", "Imaginary worlds", "True stories",
+            "Dystopian worlds", "Coming-of-age stories",
+            "Detective stories", "Inspirational stories",
             "Survival stories"
         ]
     }
@@ -82,26 +57,36 @@ QUESTIONS = [
 
 
 def load_preferences():
-    if not PREFERENCES_FILE.exists():
+    file_path = get_preferences_file()
+
+    if not file_path.exists():
         return {}
 
     try:
-        with open(PREFERENCES_FILE, "r", encoding="utf-8") as file:
+        with open(file_path, "r", encoding="utf-8") as file:
             return json.load(file)
+
     except (json.JSONDecodeError, OSError):
         return {}
 
 
 def save_preferences(preferences):
-    with open(PREFERENCES_FILE, "w", encoding="utf-8") as file:
+    file_path = get_preferences_file()
+
+    with open(file_path, "w", encoding="utf-8") as file:
         json.dump(preferences, file, indent=4)
 
 
-def open_survey(parent):
+def open_survey(parent, on_complete=None, required=False):
     window = tk.Toplevel(parent)
     window.title("BookMatch Survey")
     window.geometry("650x750")
     window.configure(bg=BG_COLOR)
+
+    if required:
+        window.transient(parent)
+        window.grab_set()
+        window.protocol("WM_DELETE_WINDOW", lambda: None)
 
     tk.Label(
         window,
@@ -113,7 +98,7 @@ def open_survey(parent):
 
     tk.Label(
         window,
-        text="Select all the answers that match your interests.",
+        text="Select all answers that match your interests.",
         font=("Arial", 12),
         bg=BG_COLOR,
         fg=TEXT_COLOR
@@ -173,6 +158,14 @@ def open_survey(parent):
 
             preferences[question] = selected_answers
 
+        if not any(preferences.values()):
+            messagebox.showwarning(
+                "Choose Answers",
+                "Please select at least one answer.",
+                parent=window
+            )
+            return
+
         save_preferences(preferences)
 
         messagebox.showinfo(
@@ -182,6 +175,9 @@ def open_survey(parent):
         )
 
         window.destroy()
+
+        if on_complete:
+            on_complete()
 
     tk.Button(
         window,

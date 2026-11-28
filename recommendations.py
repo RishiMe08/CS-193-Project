@@ -1,221 +1,568 @@
 
 import tkinter as tk
+from tkinter import messagebox
 import json
+import os
 import re
-from book_database import load_catalog
+import ssl
+import certifi
+
+from urllib.request import Request, urlopen
+from urllib.parse import urlencode
+from html import unescape
+from html.parser import HTMLParser
+from dotenv import load_dotenv
+
+from user_data import get_preferences_file
+from book_data import load_books
+from genres import GENRES
+
+
+BG_COLOR = "#CAD2C5"
+BUTTON_COLOR = "#84A98C"
+HEADING_COLOR = "#354F52"
+TEXT_COLOR = "#2F3E46"
+
+load_dotenv()
+API_KEY = os.getenv("GOOGLE_BOOKS_API_KEY")
+
+
+class SummaryParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.parts = []
+
+    def handle_data(self, data):
+        self.parts.append(data)
+
+
+def clean_summary(summary):
+    if not summary:
+        return "No summary available."
+
+    parser = SummaryParser()
+    parser.feed(summary)
+
+    text = " ".join(parser.parts)
+    text = unescape(text)
+    text = re.sub(r"\s+", " ", text)
+
+    return text.strip()
 
 
 def load_preferences():
-    try:
-        with open("preferences.json", "r", encoding="utf-8") as file:
-            return json.load(file)
+    file_path = get_preferences_file()
 
+    try:
+        with open(file_path, "r", encoding="utf-8") as file:
+            return json.load(file)
     except (FileNotFoundError, json.JSONDecodeError):
         return {}
 
 
-def load_books():
+def get_list(value):
+    if isinstance(value, list):
+        return [
+            str(item).strip()
+            for item in value
+            if str(item).strip()
+        ]
+
+    if isinstance(value, str):
+        return [
+            item.strip()
+            for item in value.split(",")
+            if item.strip()
+        ]
+
+    return []
+
+
+def get_preferences_values(preferences, keys):
+    values = []
+
+    for key in keys:
+        values.extend(get_list(preferences.get(key, [])))
+
+    return values
+
+
+def get_book_genres(book):
+    genre = book.get("genre", book.get("genres", []))
+
+    if isinstance(genre, str):
+        genre = [genre]
+
+    return [
+        str(item).strip()
+        for item in genre
+        if str(item).strip()
+    ]
+
+
+def get_rating(book):
+    rating = book.get(
+        "rating",
+        book.get("user_rating", book.get("my_rating", 0))
+    )
+
     try:
-        with open("books.json", "r", encoding="utf-8") as file:
-            return json.load(file)
-
-    except (FileNotFoundError, json.JSONDecodeError):
-        return []
+        return float(rating)
+    except (TypeError, ValueError):
+        return 0
 
 
-def get_recommendations():
-    preferences = load_preferences()
-    catalog = load_catalog()
-    library = load_books()
+def get_liked_books(user_books):
+    liked_books = []
 
-    if not catalog:
-        return [], "Your book catalog is empty. Run book_database.py first."
+    for book in user_books:
+        if get_rating(book) >= 4:
+            liked_books.append(book)
 
-    if not preferences:
-        return [], "Please take the BookMatch survey first."
+    return liked_books
 
-    preferred_answers = []
 
-    for answers in preferences.values():
-        if isinstance(answers, list):
-            preferred_answers.extend(answers)
+def make_search_queries(preferences, user_books):
+    queries = []
 
-        elif isinstance(answers, str):
-            preferred_answers.append(answers)
+    preferred_genres = get_preferences_values(
+        preferences,
+        ["genres", "genre", "favorite_genres", "book_genres"]
+    )
 
-    if not preferred_answers:
-        return [], "Please select some answers in the survey."
+    preferred_topics = get_preferences_values(
+        preferences,
+        ["topics", "favorite_topics", "interests"]
+    )
 
-    owned_titles = {
-        book.get("title", "").strip().lower()
-        for book in library
+    preferred_authors = get_preferences_values(
+        preferences,
+        ["favorite_authors", "authors"]
+    )
+
+    favorite_titles = get_preferences_values(
+        preferences,
+        ["favorite_books", "books"]
+    )
+
+    liked_books = get_liked_books(user_books)
+
+    # Search for genres selected in the survey.
+    for genre in preferred_genres:
+        queries.append("subject:" + genre)
+
+    # Search for topics selected in the survey.
+    for topic in preferred_topics:
+        queries.append(topic)
+
+    # Search for authors selected in the survey.
+    for author in preferred_authors:
+        queries.append("inauthor:" + author)
+
+    # Search for books similar to favorite titles.
+    for title in favorite_titles:
+        queries.append(title)
+
+    # Search for more books by authors in the user's library.
+    for book in user_books:
+        author = book.get("author", "").strip()
+
+        if author:
+            queries.append("inauthor:" + author)
+
+    # Search more for authors and genres from highly rated books.
+    for book in liked_books:
+        author = book.get("author", "").strip()
+
+        if author:
+            queries.append("inauthor:" + author)
+
+        for genre in get_book_genres(book):
+            queries.append("subject:" + genre)
+
+    # Remove duplicate searches.
+    unique_queries = []
+    seen = set()
+
+    for query in queries:
+        query = query.strip()
+
+        if query and query.lower() not in seen:
+            seen.add(query.lower())
+            unique_queries.append(query)
+
+    return unique_queries[:10]
+
+
+def search_google_books(query):
+    if not API_KEY:
+        raise ValueError(
+            "Google Books API key was not found.\n"
+            "Check your .env file."
+        )
+
+    parameters = {
+        "q": query,
+        "maxResults": 20,
+        "printType": "books",
+        "langRestrict": "en",
+        "key": API_KEY
     }
 
-    recommendations = []
+    url = (
+        "https://www.googleapis.com/books/v1/volumes?"
+        + urlencode(parameters)
+    )
 
-    for book in catalog:
-        title = book.get("title", "").strip()
+    request = Request(
+        url,
+        headers={"User-Agent": "BookMatch/1.0"}
+    )
+
+    ssl_context = ssl.create_default_context(
+        cafile=certifi.where()
+    )
+
+    with urlopen(
+        request,
+        timeout=20,
+        context=ssl_context
+    ) as response:
+        data = json.loads(
+            response.read().decode("utf-8")
+        )
+
+    books = []
+
+    for item in data.get("items", []):
+        info = item.get("volumeInfo", {})
+
+        title = info.get("title", "").strip()
 
         if not title:
             continue
 
-        if title.lower() in owned_titles:
+        authors = info.get("authors", ["Unknown author"])
+        categories = info.get("categories", [])
+
+        books.append({
+            "id": item.get("id", ""),
+            "title": title,
+            "author": ", ".join(authors),
+            "summary": clean_summary(
+                info.get("description", "")
+            ),
+            "genre": categories,
+            "year": info.get("publishedDate", "Unknown"),
+            "rating": info.get("averageRating", 0)
+        })
+
+    return books
+
+
+def get_recommendations():
+    preferences = load_preferences()
+    user_books = load_books()
+
+    queries = make_search_queries(
+        preferences,
+        user_books
+    )
+
+    if not queries:
+        return []
+
+    # Exclude books already in the user's library.
+    read_titles = {
+        book.get("title", "").strip().lower()
+        for book in user_books
+    }
+
+    found_books = {}
+
+    for query in queries:
+        try:
+            results = search_google_books(query)
+        except Exception as error:
+            print(f"Google Books search failed: {error}")
             continue
 
-        genres = book.get("genre", [])
+        for book in results:
+            title = book.get("title", "").strip().lower()
 
-        if isinstance(genres, str):
-            genres = [genres]
+            if title in read_titles:
+                continue
 
-        genre_text = " ".join(genres).lower()
-        summary = book.get("summary", "").lower()
+            book_id = book.get("id", "")
+
+            if not book_id:
+                book_id = title + book.get("author", "").lower()
+
+            found_books[book_id] = book
+
+    preferred_genres = get_preferences_values(
+        preferences,
+        ["genres", "genre", "favorite_genres", "book_genres"]
+    )
+
+    preferred_topics = get_preferences_values(
+        preferences,
+        ["topics", "favorite_topics", "interests"]
+    )
+
+    preferred_authors = get_preferences_values(
+        preferences,
+        ["favorite_authors", "authors"]
+    )
+
+    liked_books = get_liked_books(user_books)
+
+    liked_authors = [
+        book.get("author", "").strip().lower()
+        for book in liked_books
+        if book.get("author", "").strip()
+    ]
+
+    library_authors = [
+        book.get("author", "").strip().lower()
+        for book in user_books
+        if book.get("author", "").strip()
+    ]
+
+    liked_genres = []
+
+    for book in liked_books:
+        liked_genres.extend(get_book_genres(book))
+
+    scored_books = []
+
+    for book in found_books.values():
+        title = book.get("title", "").lower()
         author = book.get("author", "").lower()
-        title_text = title.lower()
+        summary = book.get("summary", "").lower()
+
+        genres = [
+            genre.lower()
+            for genre in get_book_genres(book)
+        ]
 
         score = 0
 
-        for answer in preferred_answers:
-            answer = str(answer).strip().lower()
+        # Match genres from the survey.
+        for genre in preferred_genres:
+            if any(genre.lower() in item for item in genres):
+                score += 5
 
-            if not answer:
-                continue
+        # Match genres from highly rated books.
+        for genre in liked_genres:
+            if any(genre.lower() in item for item in genres):
+                score += 4
 
-            if answer in genre_text:
+        # Match topics from the survey.
+        for topic in preferred_topics:
+            if topic.lower() in title or topic.lower() in summary:
                 score += 3
 
-            elif answer in title_text:
-                score += 2
+        # Match authors the user selected in the survey.
+        for preferred_author in preferred_authors:
+            if preferred_author.lower() in author:
+                score += 5
 
-            elif answer in summary:
-                score += 1
+        # Strongly recommend more books by highly rated authors.
+        for liked_author in liked_authors:
+            if liked_author in author:
+                score += 8
 
-        if score > 0:
-            book_copy = book.copy()
-            book_copy["score"] = score
-            recommendations.append(book_copy)
+        # Also recommend authors from the user's library.
+        for library_author in library_authors:
+            if library_author in author:
+                score += 3
 
-    recommendations.sort(
-        key=lambda book: book["score"],
+        # Use Google Books' average rating as a small bonus.
+        try:
+            score += float(book.get("rating", 0))
+        except (TypeError, ValueError):
+            pass
+
+        scored_books.append((score, book))
+
+    scored_books.sort(
+        key=lambda item: item[0],
         reverse=True
     )
 
-    return recommendations[:20], None
+    return [
+        book
+        for score, book in scored_books[:20]
+    ]
 
 
 def open_recommendations(parent):
     window = tk.Toplevel(parent)
-    window.title("BookMatch Recommendations")
-    window.geometry("700x600")
-    window.configure(bg="#CAD2C5")
+    window.title("BookMatch - Recommendations")
+    window.geometry("750x600")
+    window.configure(bg=BG_COLOR)
 
     heading = tk.Label(
         window,
-        text="BookMatch Recommendations",
-        font=("Arial", 20, "bold"),
-        bg="#CAD2C5",
-        fg="#354F52"
+        text="Recommended Books",
+        font=("Arial", 22, "bold"),
+        bg=BG_COLOR,
+        fg=HEADING_COLOR
     )
     heading.pack(pady=15)
 
     description = tk.Label(
         window,
-        text="Books selected based on your survey answers",
+        text="Recommendations based on your survey and reading history",
         font=("Arial", 11),
-        bg="#CAD2C5",
-        fg="#2F3E46"
+        bg=BG_COLOR,
+        fg=TEXT_COLOR,
+        wraplength=650
     )
     description.pack(pady=5)
 
-    results_frame = tk.Frame(window, bg="#CAD2C5")
-    results_frame.pack(fill="both", expand=True, padx=20, pady=10)
-
-    scrollbar = tk.Scrollbar(results_frame)
-    scrollbar.pack(side="right", fill="y")
-
-    results_list = tk.Listbox(
-        results_frame,
-        font=("Arial", 11),
-        bg="#FFFFFF",
-        fg="#2F3E46",
-        yscrollcommand=scrollbar.set,
-        selectmode=tk.SINGLE,
-        width=70,
-        height=15
+    list_frame = tk.Frame(window, bg=BG_COLOR)
+    list_frame.pack(
+        fill="both",
+        expand=True,
+        padx=20,
+        pady=10
     )
-    results_list.pack(side="left", fill="both", expand=True)
 
-    scrollbar.config(command=results_list.yview)
-
-    details_label = tk.Label(
-        window,
-        text="Select a book to see its summary.",
-        font=("Arial", 10),
-        bg="#CAD2C5",
-        fg="#2F3E46",
-        wraplength=640,
-        justify="left"
+    canvas = tk.Canvas(
+        list_frame,
+        bg=BG_COLOR,
+        highlightthickness=0
     )
-    details_label.pack(padx=20, pady=10)
 
-    books, error_message = get_recommendations()
+    scrollbar = tk.Scrollbar(
+        list_frame,
+        orient="vertical",
+        command=canvas.yview
+    )
 
-    if error_message:
-        results_list.insert(tk.END, error_message)
+    book_frame = tk.Frame(canvas, bg=BG_COLOR)
 
-    elif not books:
-        results_list.insert(
-            tk.END,
-            "No matching books found. Try different survey answers."
+    book_frame.bind(
+        "<Configure>",
+        lambda event: canvas.configure(
+            scrollregion=canvas.bbox("all")
         )
+    )
 
-    else:
-        for book in books:
-            results_list.insert(
-                tk.END,
-                book.get("title", "Unknown title")
+    canvas.create_window(
+        (0, 0),
+        window=book_frame,
+        anchor="nw"
+    )
+
+    canvas.configure(
+        yscrollcommand=scrollbar.set
+    )
+
+    canvas.pack(
+        side="left",
+        fill="both",
+        expand=True
+    )
+
+    scrollbar.pack(
+        side="right",
+        fill="y"
+    )
+
+    def display_books():
+        for widget in book_frame.winfo_children():
+            widget.destroy()
+
+        try:
+            recommendations = get_recommendations()
+        except Exception as error:
+            messagebox.showerror(
+                "Recommendations",
+                str(error)
             )
-
-    def show_details(event):
-        selection = results_list.curselection()
-
-        if not selection or not books:
             return
 
-        index = selection[0]
-
-        if index >= len(books):
+        if not recommendations:
+            message = tk.Label(
+                book_frame,
+                text="No recommendations found.\n"
+                     "Try adding books, rating them, or updating your survey.",
+                font=("Arial", 12),
+                bg=BG_COLOR,
+                fg=TEXT_COLOR,
+                wraplength=600
+            )
+            message.pack(pady=30)
             return
 
-        book = books[index]
+        for book in recommendations:
+            card = tk.Frame(
+                book_frame,
+                bg=BUTTON_COLOR,
+                padx=12,
+                pady=10
+            )
+            card.pack(fill="x", pady=7)
 
-        title = book.get("title", "Unknown title")
-        author = book.get("author", "Unknown author")
-        summary = book.get("summary", "No summary available.")
-        genres = book.get("genre", [])
-        year = book.get("year", "Unknown")
+            title = book.get("title", "Unknown title")
+            author = book.get("author", "Unknown author")
+            summary = book.get("summary", "No summary available.")
+            year = book.get("year", "Unknown")
 
-        if isinstance(genres, list):
-            genres = ", ".join(genres)
+            title_label = tk.Label(
+                card,
+                text=title,
+                font=("Arial", 15, "bold"),
+                bg=BUTTON_COLOR,
+                fg=HEADING_COLOR,
+                wraplength=620,
+                justify="left"
+            )
+            title_label.pack(anchor="w")
 
-        details = (
-            f"Title: {title}\n"
-            f"Author: {author}\n"
-            f"Genre: {genres}\n"
-            f"Year: {year}\n\n"
-            f"Summary: {summary}"
-        )
+            author_label = tk.Label(
+                card,
+                text=f"By {author} | {year}",
+                font=("Arial", 11),
+                bg=BUTTON_COLOR,
+                fg=TEXT_COLOR,
+                wraplength=620,
+                justify="left"
+            )
+            author_label.pack(anchor="w", pady=3)
 
-        details_label.config(text=details)
+            summary_label = tk.Label(
+                card,
+                text=summary,
+                font=("Arial", 10),
+                bg=BUTTON_COLOR,
+                fg=TEXT_COLOR,
+                wraplength=620,
+                justify="left"
+            )
+            summary_label.pack(anchor="w", pady=3)
 
-    results_list.bind("<<ListboxSelect>>", show_details)
+    refresh_button = tk.Button(
+        window,
+        text="Refresh Recommendations",
+        font=("Arial", 12),
+        bg=BUTTON_COLOR,
+        fg=HEADING_COLOR,
+        command=display_books
+    )
+    refresh_button.pack(pady=8)
 
     close_button = tk.Button(
         window,
         text="Close",
-        font=("Arial", 11),
-        bg="#84A98C",
-        fg="#2F3E46",
+        font=("Arial", 12),
+        bg="#52796F",
+        fg="white",
         command=window.destroy
     )
     close_button.pack(pady=10)
- 
+
+    display_books()

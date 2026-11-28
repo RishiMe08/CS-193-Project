@@ -1,18 +1,18 @@
 
 import json
-from pathlib import Path
 
-
-FILE_PATH = Path(__file__).parent / "books.json"
+from user_data import get_books_file
 
 
 def load_books():
-    if not FILE_PATH.exists():
+    file_path = get_books_file()
+
+    if not file_path.exists():
         save_books([])
         return []
 
     try:
-        with open(FILE_PATH, "r", encoding="utf-8") as file:
+        with open(file_path, "r", encoding="utf-8") as file:
             return json.load(file)
 
     except (json.JSONDecodeError, OSError):
@@ -20,7 +20,9 @@ def load_books():
 
 
 def save_books(books):
-    with open(FILE_PATH, "w", encoding="utf-8") as file:
+    file_path = get_books_file()
+
+    with open(file_path, "w", encoding="utf-8") as file:
         json.dump(books, file, indent=4)
 
 

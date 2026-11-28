@@ -1,106 +1,118 @@
 
 import tkinter as tk
 
+from login import open_login
+from user_data import user_has_completed_survey
+from survey import open_survey
+
 from library import open_library
 from add_book import open_add_book
 from rate_book import open_rate_book
-from search_books import open_search_books
+from search_book import open_search_books
 from recommendations import open_recommendations
-from find_books import open_find_books
 
 
 BG_COLOR = "#CAD2C5"
 BUTTON_COLOR = "#84A98C"
+SECONDARY_COLOR = "#52796F"
 HEADING_COLOR = "#354F52"
 TEXT_COLOR = "#2F3E46"
 
 
 def create_button(parent, text, command):
-    """Create a button for the home window."""
     button = tk.Button(
         parent,
         text=text,
-        command=command,
         font=("Arial", 13),
         bg=BUTTON_COLOR,
-        fg=TEXT_COLOR,
-        activebackground=BUTTON_COLOR,
-        activeforeground=TEXT_COLOR,
+        fg=HEADING_COLOR,
+        activebackground=SECONDARY_COLOR,
+        activeforeground="white",
         width=25,
         height=2,
-        relief="flat",
-        cursor="hand2"
+        command=command
     )
-    button.pack(pady=7)
+    button.pack(pady=8)
+
+
+def show_home():
+    home_frame = tk.Frame(root, bg=BG_COLOR)
+    home_frame.pack(fill="both", expand=True)
+
+    heading = tk.Label(
+        home_frame,
+        text="BookMatch",
+        font=("Arial", 28, "bold"),
+        bg=BG_COLOR,
+        fg=HEADING_COLOR
+    )
+    heading.pack(pady=(25, 5))
+
+    subtitle = tk.Label(
+        home_frame,
+        text="Find your next favorite book",
+        font=("Arial", 14),
+        bg=BG_COLOR,
+        fg=TEXT_COLOR
+    )
+    subtitle.pack(pady=(0, 20))
+
+    create_button(
+        home_frame,
+        "View Library",
+        lambda: open_library(root)
+    )
+
+    create_button(
+        home_frame,
+        "Add Book",
+        lambda: open_add_book(root)
+    )
+
+    create_button(
+        home_frame,
+        "Rate Book",
+        lambda: open_rate_book(root)
+    )
+
+    create_button(
+        home_frame,
+        "Search Books",
+        lambda: open_search_books(root)
+    )
+
+    create_button(
+        home_frame,
+        "Get Recommendations",
+        lambda: open_recommendations(root)
+    )
+
+    footer = tk.Label(
+        home_frame,
+        text="Your personal reading companion",
+        font=("Arial", 10),
+        bg=BG_COLOR,
+        fg=TEXT_COLOR
+    )
+    footer.pack(pady=20)
+
+
+def after_login():
+    if user_has_completed_survey():
+        show_home()
+    else:
+        open_survey(
+            root,
+            on_complete=show_home,
+            required=True
+        )
 
 
 root = tk.Tk()
 root.title("BookMatch")
 root.geometry("600x650")
 root.configure(bg=BG_COLOR)
-root.resizable(False, False)
 
-title = tk.Label(
-    root,
-    text="BookMatch",
-    font=("Arial", 32, "bold"),
-    bg=BG_COLOR,
-    fg=HEADING_COLOR
-)
-title.pack(pady=(35, 5))
-
-subtitle = tk.Label(
-    root,
-    text="Find your next favorite book",
-    font=("Arial", 15),
-    bg=BG_COLOR,
-    fg=TEXT_COLOR
-)
-subtitle.pack(pady=(0, 25))
-
-create_button(
-    root,
-    "View Library",
-    lambda: open_library(root)
-)
-
-create_button(
-    root,
-    "Add Book",
-    lambda: open_add_book(root)
-)
-
-create_button(
-    root,
-    "Rate Book",
-    lambda: open_rate_book(root)
-)
-
-create_button(
-    root,
-    "Search Books",
-    lambda: open_search_books(root)
-)
-
-create_button(
-    root,
-    "Get Recommendations",
-    lambda: open_recommendations(root)
-)
-
-create_button(
-    root,
-    "Find New Books",
-    lambda: open_find_books(root)
-)
-
-footer = tk.Label(
-    root,
-    text="Your personal reading companion",
-    font=("Arial", 11),
-    bg=BG_COLOR,
-    fg=TEXT_COLOR
-)
-footer.pack(side="bottom", pady=20)
+open_login(root, after_login)
 
 root.mainloop()

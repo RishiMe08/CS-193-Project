@@ -1,8 +1,9 @@
 
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import ttk, messagebox
 
 from book_data import add_book
+from genres import GENRES
 
 
 BG_COLOR = "#CAD2C5"
@@ -13,83 +14,133 @@ TEXT_COLOR = "#2F3E46"
 
 def open_add_book(parent):
     window = tk.Toplevel(parent)
-    window.title("Add Book")
+    window.title("BookMatch - Add Book")
     window.geometry("450x550")
     window.configure(bg=BG_COLOR)
 
-    tk.Label(
+    heading = tk.Label(
         window,
         text="Add a Book",
-        font=("Arial", 24, "bold"),
+        font=("Arial", 22, "bold"),
         bg=BG_COLOR,
         fg=HEADING_COLOR
-    ).pack(pady=20)
+    )
+    heading.pack(pady=20)
 
-    tk.Label(
+    title_label = tk.Label(
         window,
-        text="Book Title",
+        text="Book Title:",
+        font=("Arial", 12),
         bg=BG_COLOR,
         fg=TEXT_COLOR
-    ).pack()
+    )
+    title_label.pack(pady=5)
 
-    title_entry = tk.Entry(window, width=35, font=("Arial", 12))
+    title_entry = tk.Entry(
+        window,
+        font=("Arial", 12),
+        width=30
+    )
     title_entry.pack(pady=5)
 
-    tk.Label(
+    author_label = tk.Label(
         window,
-        text="Author",
+        text="Author:",
+        font=("Arial", 12),
         bg=BG_COLOR,
         fg=TEXT_COLOR
-    ).pack()
+    )
+    author_label.pack(pady=5)
 
-    author_entry = tk.Entry(window, width=35, font=("Arial", 12))
+    author_entry = tk.Entry(
+        window,
+        font=("Arial", 12),
+        width=30
+    )
     author_entry.pack(pady=5)
 
-    tk.Label(
+    genre_label = tk.Label(
         window,
-        text="Genre",
+        text="Genre:",
+        font=("Arial", 12),
         bg=BG_COLOR,
         fg=TEXT_COLOR
-    ).pack()
+    )
+    genre_label.pack(pady=5)
 
-    genre_entry = tk.Entry(window, width=35, font=("Arial", 12))
-    genre_entry.pack(pady=5)
-
-    tk.Label(
+    genre_menu = ttk.Combobox(
         window,
-        text="Reading Status",
+        values=GENRES,
+        state="readonly",
+        font=("Arial", 12),
+        width=27
+    )
+    genre_menu.pack(pady=5)
+    genre_menu.set("Choose a genre")
+
+    status_label = tk.Label(
+        window,
+        text="Reading Status:",
+        font=("Arial", 12),
         bg=BG_COLOR,
         fg=TEXT_COLOR
-    ).pack()
+    )
+    status_label.pack(pady=5)
 
-    status = tk.StringVar(value="Want to Read")
-
-    tk.OptionMenu(
-        window,
-        status,
+    status_options = [
         "Read",
         "Currently Reading",
         "Want to Read"
-    ).pack(pady=5)
+    ]
 
-    def save_new_book():
-        book_title = title_entry.get().strip()
+    status_variable = tk.StringVar(
+        value="Want to Read"
+    )
+
+    status_menu = tk.OptionMenu(
+        window,
+        status_variable,
+        *status_options
+    )
+    status_menu.config(
+        font=("Arial", 11),
+        bg=BUTTON_COLOR,
+        fg=HEADING_COLOR
+    )
+    status_menu.pack(pady=5)
+
+    def save_book():
+        title = title_entry.get().strip()
         author = author_entry.get().strip()
-        genre = genre_entry.get().strip()
+        genre = genre_menu.get()
+        status = status_variable.get()
 
-        if not book_title or not author:
+        if not title:
             messagebox.showwarning(
                 "Missing Information",
-                "Please enter the title and author.",
-                parent=window
+                "Please enter the book title."
+            )
+            return
+
+        if not author:
+            messagebox.showwarning(
+                "Missing Information",
+                "Please enter the author."
+            )
+            return
+
+        if genre not in GENRES:
+            messagebox.showwarning(
+                "Missing Information",
+                "Please choose a genre."
             )
             return
 
         book = {
-            "title": book_title,
+            "title": title,
             "author": author,
             "genre": genre,
-            "status": status.get(),
+            "status": status,
             "rating": 0
         }
 
@@ -97,20 +148,27 @@ def open_add_book(parent):
 
         messagebox.showinfo(
             "Book Added",
-            "Your book was saved!",
-            parent=window
+            f"{title} was added to your library."
         )
 
         window.destroy()
 
-    tk.Button(
+    save_button = tk.Button(
         window,
         text="Save Book",
-        command=save_new_book,
         font=("Arial", 12),
         bg=BUTTON_COLOR,
-        fg=TEXT_COLOR,
-        width=20
-    ).pack(pady=25)
+        fg=HEADING_COLOR,
+        command=save_book
+    )
+    save_button.pack(pady=20)
 
-    return window
+    close_button = tk.Button(
+        window,
+        text="Cancel",
+        font=("Arial", 12),
+        bg="#52796F",
+        fg="white",
+        command=window.destroy
+    )
+    close_button.pack(pady=5)

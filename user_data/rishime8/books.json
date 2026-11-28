@@ -1,0 +1,16 @@
+[
+    {
+        "title": "The Naturals",
+        "author": "Jennifer Lynn Barnes",
+        "genre": "True Crime",
+        "status": "Read",
+        "rating": 5
+    },
+    {
+        "title": "Hunger Games",
+        "author": "Susanne Collins",
+        "genre": "Science Fiction",
+        "status": "Read",
+        "rating": 4
+    }
+]

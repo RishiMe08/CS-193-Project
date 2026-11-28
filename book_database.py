@@ -3,6 +3,8 @@ import os
 import json
 import re
 import time
+import ssl
+import certifi
 from html import unescape
 from html.parser import HTMLParser
 from urllib.request import Request, urlopen
@@ -59,8 +61,12 @@ def search_books_by_subject(subject, pages=2):
 
     if not API_KEY:
         print("Google Books API key was not found.")
-        print("Check that your .env file has GOOGLE_BOOKS_API_KEY.")
+        print("Check your .env file.")
         return books
+
+    ssl_context = ssl.create_default_context(
+        cafile=certifi.where()
+    )
 
     for page in range(pages):
         parameters = {
@@ -83,7 +89,11 @@ def search_books_by_subject(subject, pages=2):
         )
 
         try:
-            with urlopen(request, timeout=20) as response:
+            with urlopen(
+                request,
+                timeout=20,
+                context=ssl_context
+            ) as response:
                 data = json.loads(
                     response.read().decode("utf-8")
                 )

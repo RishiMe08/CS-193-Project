@@ -1,0 +1,25 @@
+{
+    "1. What genres do you enjoy?": [
+        "Fantasy",
+        "Mystery",
+        "Romance",
+        "Science Fiction"
+    ],
+    "2. What themes interest you?": [
+        "Personal Growth",
+        "Family"
+    ],
+    "3. What reading style do you prefer?": [
+        "Fast-paced",
+        "Lots of action",
+        "Detailed descriptions"
+    ],
+    "4. What book length do you prefer?": [
+        "Medium-length books",
+        "Long books"
+    ],
+    "5. What kinds of stories interest you?": [
+        "Detective stories",
+        "Survival stories"
+    ]
+}
